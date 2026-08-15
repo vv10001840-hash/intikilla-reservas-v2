@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "concurrently \"npm run dev:client\" \"npm run server\"",
+    "start": "node server/index.js",
     "dev:client": "vite",
     "server": "node server/index.js",
     "db:init": "node server/init-database.js",
