@@ -4,7 +4,7 @@ import { getState, initializeDatabase, pool, toReservation } from './database.js
 import { sendConfirmationEmail } from './notifications.js'
 
 const app = express()
-const port = Number(process.env.API_PORT ?? 3001)
+const port = Number(process.env.PORT ?? process.env.API_PORT ?? 3001)
 const clients = new Set()
 let databaseReady = false
 
