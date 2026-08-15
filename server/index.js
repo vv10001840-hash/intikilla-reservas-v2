@@ -1,14 +1,26 @@
 import crypto from 'node:crypto'
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
 import express from 'express'
 import { getState, initializeDatabase, pool, toReservation } from './database.js'
 import { sendConfirmationEmail } from './notifications.js'
 
+const __dirname = path.dirname(fileURLToPath(import.meta.url))
+const distDir = path.join(__dirname, '..', 'dist')
+
 const app = express()
+// Railway (y la mayoría de plataformas de hosting) asignan el puerto
+// automáticamente en la variable PORT. En desarrollo local no existe esa
+// variable, así que usamos API_PORT/3001 como respaldo.
 const port = Number(process.env.PORT ?? process.env.API_PORT ?? 3001)
 const clients = new Set()
 let databaseReady = false
 
 app.use(express.json())
+// Sirve el frontend ya compilado (npm run build genera esta carpeta dist/).
+// En desarrollo local, dist/ no existe todavia y esto simplemente no encuentra
+// archivos, dejando que Vite (puerto 5173) siga sirviendo la interfaz.
+app.use(express.static(distDir))
 
 function sendError(response, status, message) {
   response.status(status).json({ error: message })
@@ -176,6 +188,15 @@ app.patch('/api/mesas/:id', async (request, response) => {
   } catch {
     sendError(response, 500, 'No se pudo actualizar la mesa.')
   }
+})
+
+// Catch-all: cualquier ruta que no sea /api/... y no coincida con un archivo
+// estatico devuelve index.html, para que la app de React maneje la navegacion.
+// Debe ir despues de todas las rutas /api definidas arriba.
+app.get(/^(?!\/api).*/, (request, response) => {
+  response.sendFile(path.join(distDir, 'index.html'), (error) => {
+    if (error) response.status(404).send('Interfaz no compilada: ejecuta "npm run build" primero.')
+  })
 })
 
 async function start() {
